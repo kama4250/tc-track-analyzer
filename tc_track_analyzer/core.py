@@ -20,15 +20,14 @@ class StormTrack:
         total_dist = 0
         for i in range(1,len(self.data)):
             total_dist += haversine(
-                self.data[i-1]['lat'],self.data[i-1]['lon'],
-                self.data[i]['lat'],self.data[i]['lon']
+                self.data['lat'].iloc[i-1],self.data['lon'].iloc[i-1],
+                self.data['lat'].iloc[i],self.data['lon'].iloc[i]
             )
         return total_dist
     
 class IntensityAnalyzer:
     def __init__(self, storm_track):
         self.df = storm_track.data
-
     
     def detect_rapid_intensification(self):
         ri_events = []
