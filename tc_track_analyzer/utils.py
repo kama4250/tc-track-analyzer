@@ -1,5 +1,6 @@
 import math
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371  # Earth radius in kilometers
@@ -11,33 +12,28 @@ def haversine(lat1, lon1, lat2, lon2):
     return R * c
 
 def plot_track(storm_track):
-    lats = []
-    lons = []
+    df = storm_track.data
 
-    for point in storm_track.data:
-        lats.append(point['lat'])
-        lons.append(point['lon'])
-
-    plt.figure()
-    plt.plot(lons, lats)
-    plt.xlabel("Longitude")
-    plt.ylabel("Latitude")
+    plt.plot(df['lon'], df['lat'])
+    plt.xlabel("Longitude (°)")
+    plt.ylabel("Latitude (°)")
     plt.title("Storm track: " + storm_track.storm_id)
     plt.grid()
     plt.show()
 
 def plot_intensity(storm_track):
-    times = []
-    winds = []
-
-    for point in storm_track.data:
-        times.append(point['time'])
-        winds.append(point['wind'])
-
+    df = storm_track.data
+    
     plt.figure()
-    plt.plot(times, winds)
+    plt.plot(df['time'], df['wind'], marker='o')
+
+    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m-%d %H:%M'))
+    plt.gca().xaxis.set_major_locator(mdates.DayLocator())
+
+    plt.xticks(rotation=45)
     plt.xlabel("Time")
-    plt.ylabel("Wind Speed")
+    plt.ylabel("Wind Speed (kts)")
     plt.title("Intensity: " + storm_track.storm_id)
     plt.grid()
+    plt.tight_layout()
     plt.show()

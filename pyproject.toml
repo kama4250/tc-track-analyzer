@@ -21,4 +21,4 @@ dependencies = [
 dev = ["build", "twine"]
 
 [project.scripts]
-run-tc-track-analyzer = "tropical_cyclone_track_analyzer.run_:main"
+run-tc-track-analyzer = "tc_track_analyzer.run_:main"

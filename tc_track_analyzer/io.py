@@ -1,9 +1,32 @@
+import pandas as pd
 from datetime import datetime
 
 class DataLoader:
     def __init__(self, filepath):
         self.filepath = filepath
     
+    def validate_data(self, row):
+        if not (-90 <= row['lat'] <= 90):
+            raise ValueError("Invalid latitude")
+        
+        if not (-90 <= row['lon'] <= 90):
+            raise ValueError("Invalid longitude")
+        
+        if row['wind'] < 0:
+            raise ValueError("Wind cannot be negative")
+        
+    def parse_lat(self, lat_str):
+        lat = float(lat_str[:-1])
+        if lat_str[-1] == 'S':
+            lat *= -1
+        return lat
+    
+    def parse_lon(self, lon_str):
+        lon = float(lon_str[:-1])
+        if lon_str[-1] == 'W':
+            lon *= -1
+        return lon
+
     def load_hurdat2(self):
         data = []
         current_storm_id = None
@@ -47,7 +70,7 @@ class DataLoader:
                         'wind': wind
                     }
 
-                    self.validate_row(row)
+                    self.validate_data(row)
                     data.append(row)
 
                 except (ValueError, IndexError):
@@ -58,26 +81,4 @@ class DataLoader:
         except FileNotFoundError:
             print("Error: file not found")
 
-        return data
-    
-    def validate_data(self, row):
-        if not (-90 <= row['lat'] <= 90):
-            raise ValueError("Invalid latitude")
-        
-        if not (-90 <= row['lon'] <= 90):
-            raise ValueError("Invalid longitude")
-        
-        if row['wind'] < 0:
-            raise ValueError("Wind cannot be negative")
-        
-    def parse_lat(self, lat_str):
-        lat = float(lat_str[:-1])
-        if lat_str[-1] == 'S':
-            lat *= -1
-        return lat
-    
-    def parse_lon(self, lon_str):
-        lon = float(lon_str[:-1])
-        if lon_str[-1] == 'W':
-            lon *= -1
-        return lon
+        return pd.DataFrame(data)
