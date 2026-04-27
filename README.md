@@ -5,31 +5,37 @@ This project will analyze tropical cyclone track data and identify key storm cha
 pip install -e .
 
 ## Quick start
-Run a simple analysis on HURDAT2 hurricane data:
+Run a simple analysis on HURDAT2 hurricane data (hurricane Ida):
 ```python
-from tc-track-analyzer.io import DataLoader
-from tc-track-analyzer.core import StormTrack, IntensityAnalyzer
-from tc-track-analyzer.utils import plot_track
+from tc_track_analyzer.core import StormTrack, IntensityAnalyzer
+from tc_track_analyzer.io import DataLoader
+from tc_track_analyzer.utils import plot_track, plot_intensity
 
 # Load HURDAT2 data
-loader = DataLoader("hurdat2-1851-2025-02272026.txt")
-data = loader.load_hurdat2()
+loader = DataLoader("../data/hurdat2-1851-2025-02272026.txt")
+df = loader.load_hurdat2()
 
-# Group data by storm
-storms = {}
-for row in data:
-    if row['storm_id'] not in storms:
-        storms[row]['storm_id'] = []
-    storms.append(row)
+# Analyze a storm (hurricane Ida)
+storm_id = "AL092021"
+mask = (df['storm_id'] == storm_id)
+storm_df = df[mask]
 
-# Analyze the first storm
-storm_id = list(storms.keys())[0]
-track = StormTrack(storm_id, storms[storm_id])
+track = StormTrack(storm_id, storm_df)
+analyzer = IntensityAnalyzer(track)
+ri_events = analyzer.detect_rapid_intensification()
 
 print("Storm:", storm_id)
 print("Max wind:", track.get_max_wind())
 print("Duration (hrs):", track.get_duration())
+print("RI events:")
+for event in ri_events:
+    print(
+        f"{event['start_time'].strftime('%Y-%m-%d %H:%M')} → "
+        f"{event['end_time'].strftime('%Y-%m-%d %H:%M')} | "
+        f"+{float(event['increase']):.0f} kt"
+    )
 
-# Plot the storm track
+# Plot the storm track and intensity
 plot_track(track)
+plot_intensity(track)
 ```
