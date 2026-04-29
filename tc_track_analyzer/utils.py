@@ -1,6 +1,12 @@
 import math
+import numpy as np
+import pandas as pd
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import matplotlib.cm as cm 
+from matplotlib.collections import LineCollection
 
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371  # Earth radius in kilometers
@@ -11,15 +17,56 @@ def haversine(lat1, lon1, lat2, lon2):
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     return R * c
 
+# Updating plot_track function to overlay on a map
 def plot_track(storm_track):
     df = storm_track.data
+    
+    # Setup figure and map projectipn
+    fig, ax = plt.subplots(
+        figsize = (8,10), 
+        subplot_kw={'projection': ccrs.PlateCarree()}, 
+        constrained_layout = True
+    )
 
-    plt.plot(df['lon'], df['lat'])
-    plt.xlabel("Longitude (°)")
-    plt.ylabel("Latitude (°)")
-    plt.title("Storm track: " + storm_track.storm_id)
-    plt.grid()
+    #Add geographic features
+    ax.coastlines(linewidth=0.8)
+    ax.add_feature(cfeature.BORDERS, linewidth=0.5, linestyle='--')
+    ax.add_feature(cfeature.LAND, facecolor='gray', alpha=0.3)
+    ax.add_feature(cfeature.STATES, edgecolor = 'gray', linewidth = 0.5, alpha = 0.2)
+    ax.add_feature(cfeature.OCEAN, facecolor = 'lightblue')
+    ax.gridlines(draw_labels=True, linewidth=0.5, alpha=0.5)
+    
+    #Add padding: adding extra degrees to the edges of the map so the track doesnt look crammed
+    padding = 5 # extra degrees around the track
+    ax.set_extent([
+        df['lon'].min() - padding, # left edge (minus 10)
+        df['lon'].max() + padding, # right edge (plus 10)
+        df['lat'].min() - padding, # bottom edge (minus 10)
+        df['lat'].max() + padding  # top edge (plus 10)
+    ], crs=ccrs.PlateCarree())
+
+    # build line segments from consecutive lat/lon pairs using LineCollection
+    points = np.array([df['lon'], df['lat']]).T.reshape(-1,1,2)
+    segments = np.concatenate([points[:-1], points[1:]], axis = 1)
+
+    lc = LineCollection(segments, cmap = "plasma", transform = ccrs.PlateCarree(), linewidth = 3)
+    # uses df['wind'] to color the line (see the intensiy of the storm on the track)
+    lc.set_array(df['wind'].values)
+    ax.add_collection(lc)
+
+    # add colorbar 
+    plt.colorbar(lc, ax=ax, label = 'Wind Speed (kts)', shrink = 0.5)
+
+    
+    # mark start and end points 
+    ax.plot(df['lon'].iloc[0], df['lat'].iloc[0], color = 'limegreen', marker = 'o', markersize = 8, transform = ccrs.PlateCarree(), label = 'Start')
+    ax.plot(df['lon'].iloc[-1], df['lat'].iloc[-1], color = 'coral', marker = 'o', markersize = 8, transform = ccrs.PlateCarree(), label = 'End')
+
+    ax.set_title("Storm Track: " + storm_track.storm_id)
+    plt.legend()
     plt.show()
+
+    return fig, ax
 
 def plot_intensity(storm_track):
     df = storm_track.data
@@ -37,3 +84,30 @@ def plot_intensity(storm_track):
     plt.grid()
     plt.tight_layout()
     plt.show()
+
+
+if __name__ == "__main__":
+# adding fake tester strom and running data (having trouble installing the package)
+    class TestStormTrack:
+        def __init__(self):
+            self.storm_id = "storm_01"
+
+            # similate storm moving through gulf of Mexico
+            n = 20 # steps
+            lons = np.linspace(-85, -70, n) # (start, stop, steps) -- moving east
+            lats = np.linspace(20, 35, n) # (start, stop, steps) -- moving north
+            lats += np.sin(np.linspace(0,2,n))*1.5 # adds slight wobble so path isnt straight
+
+            times = pd.date_range(start=('2021-08-27'), periods = n, freq = '6h')
+            winds = 40 + np.linspace(0, 80, n) + np.random.normal(0,5,n) # shows an intensifying storm (for plot_itensity)
+
+            self.data = pd.DataFrame({
+                'lon': lons, 
+                'lat': lats, 
+                'time': times, 
+                'wind': winds
+            })
+
+    test_storm = TestStormTrack()
+    plot_track(test_storm)
+    plot_intensity(test_storm)
