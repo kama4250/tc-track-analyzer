@@ -2,7 +2,7 @@
 This project will analyze tropical cyclone track data and identify key storm characteristics such as movement patterns and intensification events.
 
 ## Installation
-pip install -e .
+python -m pip install -e .
 
 ## Quick start
 Run a simple analysis on HURDAT2 hurricane data (hurricane Ida):
