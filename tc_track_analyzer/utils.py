@@ -9,6 +9,25 @@ import matplotlib.cm as cm
 from matplotlib.collections import LineCollection
 
 def haversine(lat1, lon1, lat2, lon2):
+    """
+    Compute the great-circle distance between two points on Earth.
+
+    Parameters
+    ----------
+    lat1: float
+        Latitude of the first point (degrees).
+    lon1: float
+        Longitude of the first point (degrees).
+    lat2: float
+        Latitude of the second point (degrees).
+    lon2: float
+        Longitude of the second point (degrees).
+    
+    Returns
+    -------
+    float
+        Distance between the two points in km.
+    """
     R = 6371  # Earth radius in kilometers
     phi1, phi2 = math.radians(lat1), math.radians(lat2)
     dphi = math.radians(lat2 - lat1)
@@ -19,7 +38,26 @@ def haversine(lat1, lon1, lat2, lon2):
 
 # Updating plot_track function to overlay on a map
 def plot_track(storm_track):
-    df = storm_track.data
+    """
+    Plot the geographic track of a storm on a map.
+
+    Parameters
+    ----------
+    storn_track: StormTrack
+        StormTrack object containing storm data. Must include a DataFrame attribute 'df' with columns 'lat', 'lon', and 'wind', and an attribute 'storm_id'.
+    
+    Returns
+    -------
+    tuple
+        (fig, ax) where:
+        - fig: matplotlib.figure.Figure
+        - ax: matplotlib.axes._subplots.GeoAxesSubplot
+    
+    Notes
+    -----
+    Geographic map added by Clara via PR
+    """
+    df = storm_track.df
     
     # Setup figure and map projectipn
     fig, ax = plt.subplots(
@@ -69,7 +107,19 @@ def plot_track(storm_track):
     return fig, ax
 
 def plot_intensity(storm_track):
-    df = storm_track.data
+    """
+    Plot storm intensity (wind speed) as a function of time.
+    
+    Parameters
+    ----------
+    storm_track: StormTrack
+        StormTrack object containing storm data. Must contain a DataFrame attribute 'df' with columns 'time' and 'wind', and an attribute 'storm_id'.
+    
+    Returns
+    -------
+    None
+    """
+    df = storm_track.df
     
     plt.figure()
     plt.plot(df['time'], df['wind'], marker='o')
@@ -84,30 +134,3 @@ def plot_intensity(storm_track):
     plt.grid()
     plt.tight_layout()
     plt.show()
-
-
-if __name__ == "__main__":
-# adding fake tester strom and running data (having trouble installing the package)
-    class TestStormTrack:
-        def __init__(self):
-            self.storm_id = "storm_01"
-
-            # similate storm moving through gulf of Mexico
-            n = 20 # steps
-            lons = np.linspace(-85, -70, n) # (start, stop, steps) -- moving east
-            lats = np.linspace(20, 35, n) # (start, stop, steps) -- moving north
-            lats += np.sin(np.linspace(0,2,n))*1.5 # adds slight wobble so path isnt straight
-
-            times = pd.date_range(start=('2021-08-27'), periods = n, freq = '6h')
-            winds = 40 + np.linspace(0, 80, n) + np.random.normal(0,5,n) # shows an intensifying storm (for plot_itensity)
-
-            self.data = pd.DataFrame({
-                'lon': lons, 
-                'lat': lats, 
-                'time': times, 
-                'wind': winds
-            })
-
-    test_storm = TestStormTrack()
-    plot_track(test_storm)
-    plot_intensity(test_storm)
